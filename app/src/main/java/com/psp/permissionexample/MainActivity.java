@@ -1,14 +1,14 @@
 package com.psp.permissionexample;
 
-import androidx.annotation.NonNull;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -21,8 +21,6 @@ import com.psp.permissionexample.databinding.ActivityMainBinding;
 public class MainActivity extends AppCompatActivity implements PermissionCallback {
 
     ActivityMainBinding binding;
-
-    private final int REQUEST_READ_CONTACTS = 1;
 
     private PermissionManager permissionManager;
 
@@ -42,29 +40,14 @@ public class MainActivity extends AppCompatActivity implements PermissionCallbac
         binding.btnRequestPermission.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 permissionManager.checkRuntimePermission(PERMISSION,MainActivity.this);
             }
         });
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        
-        if(requestCode == REQUEST_READ_CONTACTS) {
-            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    @Override
     public void onRequestPermission() {
-        ActivityCompat.requestPermissions(MainActivity.this,new String[]
-                {PERMISSION}, REQUEST_READ_CONTACTS);
+        permissionLauncher.launch(PERMISSION);
         Toast.makeText(this, "Request permission", Toast.LENGTH_SHORT).show();
     }
 
@@ -82,8 +65,7 @@ public class MainActivity extends AppCompatActivity implements PermissionCallbac
                 .setPositiveButton("RE-TRY", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        ActivityCompat.requestPermissions(MainActivity.this,new String[]
-                                {PERMISSION}, REQUEST_READ_CONTACTS);
+                        permissionLauncher.launch(PERMISSION);
                     }
                 })
                 .setNegativeButton("I'M SURE", new DialogInterface.OnClickListener() {
@@ -120,4 +102,18 @@ public class MainActivity extends AppCompatActivity implements PermissionCallbac
                 })
                 .create().show();
     }
+
+    private final ActivityResultLauncher<String> permissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            new ActivityResultCallback<Boolean>() {
+                @Override
+                public void onActivityResult(Boolean result) {
+                    if(result) {
+                        Toast.makeText(MainActivity.this, "Permission granted", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Permission denied", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+    );
 }
